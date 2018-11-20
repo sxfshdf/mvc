@@ -1,26 +1,51 @@
 fakeData()
 
-var model = {
+function Model(options){
+  this.data = options.data
+  this.resource = options.resource
+}
+
+Model.prototype.fetch = function(id){
+  return axios.get(`/${this.resource}s/${id}`).then((response)=>{
+    this.data = response.data
+    return response
+  })
+}
+
+Model.prototype.update = function(id,data){
+  return axios.put(`/${this.resource}s/${id}`,data).then((response)=>{
+    this.data = response.data
+    return response
+  })
+}
+
+
+function View(options){
+  this.el = options.el
+  this.template = options.template
+}
+
+View.prototype.render = function(data){
+  var html = this.template
+  for(let key in data){
+    html = html.replace(`__${key}__`,data[key])
+  }
+  $(this.el).html(html)
+}
+
+// 上面是 MVC 类，下面是对象
+
+var model = new Model({
   data: {
     name: '',
     number: 0,
     id: ''
   },
-  fetch(id){
-    return axios.get(`192.168.0.110:8080/books/${id}`).then((response)=>{
-      this.data = response.data
-      return response
-    })
-  },
-  update(id,data){
-    return axios.put(`192.168.0.110:8080/books/${id}`,data).then((response)=>{
-      this.data = response.data
-      return response
-    })
-  }
-}
+  resource: 'book'
+})
 
-var view = {
+
+var view = new View({
   el: '#app',
   template: `
     <div>
@@ -32,13 +57,8 @@ var view = {
       <button id="minusOne">减1</button>
       <button id="reset">归零</button>
     </div>
-  `,
-  render(data){
-    var html = this.template.replace('__name__',data.name)
-      .replace('__number__',data.number)
-    $(this.el).html(html)
-  }
-}
+  `
+})
 
 var controller = {
   init(options){
@@ -86,6 +106,9 @@ var controller = {
 
 controller.init({view:view,model:model})
 
+
+
+
 function fakeData(){
   var book = {
   name: 'JavaScript高级程序设计',
@@ -96,9 +119,9 @@ function fakeData(){
   axios.interceptors.response.use(function(response){
     var config = response.config
     var {method,url,data} = config
-    if( url === '192.168.0.110:8080/books/1' && method === 'get'){
+    if( url === '/books/1' && method === 'get'){
       response.data = book
-    }else if(url === '192.168.0.110:8080/books/1' && method === 'put'){
+    }else if(url === '/books/1' && method === 'put'){
       data = JSON.parse(data)
       Object.assign(book,data)
       response.data = book
